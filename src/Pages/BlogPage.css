@@ -1,0 +1,71 @@
+/* src/Pages/BlogPage.css */
+.blog-page .blog-header {
+  width: 100%;
+  max-width: 900px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  border-bottom: 2px solid var(--primary-accent);
+  padding-bottom: 1rem;
+}
+
+.blog-page h1 {
+  margin: 0;
+}
+
+.write-blog-button {
+  padding: 0.8rem 1.5rem;
+  background-color: var(--primary-accent);
+  color: var(--navbar-bg);
+  text-decoration: none;
+  border-radius: 8px;
+  font-weight: bold;
+  transition: transform 0.2s ease;
+}
+
+.write-blog-button:hover {
+  transform: scale(1.05);
+}
+
+.post-list {
+  width: 100%;
+  max-width: 900px;
+}
+
+.post-summary {
+  background-color: var(--navbar-bg);
+  border-radius: 8px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+  display: flex;
+  gap: 1.5rem;
+}
+
+.post-summary-image {
+  width: 150px;
+  height: 150px;
+  object-fit: cover;
+  border-radius: 8px;
+}
+
+.post-summary-content {
+  text-align: left;
+  color: var(--text-color);
+}
+
+.post-summary-content h2 {
+  margin-top: 0;
+}
+
+.no-posts {
+  color: var(--text-color);
+  font-size: 1.2rem;
+}
+
+/* Add a gradient background to post summaries only on the willow page */
+[data-theme='willow'] .post-summary {
+  background: linear-gradient(135deg, #4B0082, #2c2a4a);
+  border: 1px solid #9370DB;
+}

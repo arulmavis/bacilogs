@@ -1,0 +1,85 @@
+/* src/pages/HomePage.css */
+
+.homepage-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: calc(100vh - 80px); /* Full height minus navbar */
+  padding: 2rem;
+  position: relative; /* Add position relative for z-index context */
+  z-index: 1; /* Ensure content is above particles */
+}
+
+.homepage-header h1 {
+  font-size: 3rem;
+  color: var(--text-color);
+  margin-bottom: 3rem;
+  text-align: center;
+}
+
+.blog-selection-container {
+  display: flex;
+  justify-content: center;
+  align-items: stretch;
+  gap: 2rem;
+  width: 100%;
+  max-width: 1200px;
+}
+
+.blog-button {
+  flex: 1;
+  padding: 5rem 2rem; /* Increased padding for more height */
+  position: relative; /* Crucial for positioning particles inside */
+  overflow: hidden; /* Hides particles that go outside the button's rounded corners */
+  min-height: 350px; /* Set a minimum height */
+  border: none;
+  border-radius: 15px;
+  cursor: pointer;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.blog-button:hover {
+  transform: translateY(-10px);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+}
+
+.blog-button h2 {
+  margin: 0;
+  font-size: 2.5rem; /* Larger font size for the title */
+  color: #fff; /* White text for better contrast on vibrant gradients */
+  text-shadow: 1px 1px 3px rgba(0,0,0,0.4);
+}
+
+.button-content {
+  display: flex;
+  flex-direction: column;
+  position: relative; /* Lifts the text content */
+  z-index: 1; /* Ensures text is on top of the particles inside the button */
+}
+
+.author-name {
+  font-size: 1.4rem; /* Larger font size */
+  font-style: italic;
+  margin: 0.5rem 0;
+  color: #eee;
+}
+
+.post-count {
+  font-size: 1.1rem; /* Larger font size */
+  margin: 0;
+  color: #ddd;
+}
+
+/* Specific styles for each button to give them their base colors */
+.blog-button.willow {
+  background: linear-gradient(135deg, #8A2BE2, #4B0082); /* Vibrant: BlueViolet to Indigo */
+}
+
+.blog-button.wishes {
+  background: linear-gradient(135deg, #228B22, #8B4513); /* Vibrant: ForestGreen to SaddleBrown */
+}

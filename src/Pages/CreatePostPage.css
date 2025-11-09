@@ -1,0 +1,71 @@
+/* src/Pages/CreatePostPage.css */
+.create-post-page {
+  width: 100%;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.post-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  text-align: left;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: bold;
+  font-size: 1.1rem;
+}
+
+.form-group input[type="text"],
+.form-group input[type="file"] {
+  width: 100%;
+  padding: 0.8rem;
+  border-radius: 5px;
+  border: 1px solid #ccc;
+  background-color: var(--background-color);
+  color: var(--text-color);
+  box-sizing: border-box;
+}
+
+.image-preview {
+  max-width: 200px;
+  margin-top: 1rem;
+  border-radius: 5px;
+}
+
+/* Styling for the ReactQuill editor */
+.ql-toolbar {
+  border-radius: 5px 5px 0 0;
+  background: #f0f0f0;
+}
+
+.ql-container {
+  min-height: 300px;
+  font-size: 16px;
+  border-radius: 0 0 5px 5px;
+  background-color: var(--background-color);
+}
+
+.ql-editor {
+  color: var(--text-color);
+}
+
+.submit-post-button {
+  padding: 1rem 2rem;
+  font-size: 1.2rem;
+  font-weight: bold;
+  cursor: pointer;
+  border: none;
+  border-radius: 8px;
+  background-color: var(--primary-accent);
+  color: var(--navbar-bg);
+  align-self: center;
+  transition: transform 0.2s ease;
+}
+
+.submit-post-button:hover {
+  transform: scale(1.05);
+}
