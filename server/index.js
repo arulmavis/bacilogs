@@ -12,7 +12,7 @@ app.use(express.json()); // Allows us to parse JSON in request bodies
 
 // A simple root route to check if the API is running
 app.get('/', (req, res) => {
-  res.send('<h1>BaciLogs API is running!</h1><p>Welcome to the backend.</p>');
+  res.send('<h1>Bacılogs API is running!</h1><p>Welcome to the backend.</p>');
 });
 
 // Connect to MongoDB
