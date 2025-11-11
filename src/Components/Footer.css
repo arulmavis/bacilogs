@@ -1,0 +1,9 @@
+/* src/Components/Footer.css */
+.footer {
+    padding: 1rem 2rem;
+    background-color: var(--background-color);
+    color: var(--text-color);
+    text-align: center;
+    font-size: 0.9rem;
+    border-top: 1px solid var(--border-color);
+}

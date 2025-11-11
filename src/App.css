@@ -1,13 +1,107 @@
 /* src/App.css */
+.App.light {
+  --background-color: #ffffff;
+  --text-color: #000000;
+  --border-color: #dddddd;
+  --navbar-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  --button-hover-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+}
+
+.App.dark {
+  --background-color: #282c34;
+  --text-color: #ffffff;
+  --border-color: #444444;
+  --navbar-shadow: 0 2px 4px rgba(255, 255, 255, 0.05);
+  --button-hover-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
+}
+
+.App.willow {
+  --background-color: #f0f8f0; /* Honeydew */
+  --text-color: #3a5a40; /* Dark green */
+  --border-color: #a3b18a; /* Sage green */
+  --navbar-shadow: 0 2px 4px rgba(58, 90, 64, 0.15);
+  --button-hover-shadow: 0 8px 20px rgba(58, 90, 64, 0.2);
+}
+
 .App {
   text-align: center;
+  background-color: var(--background-color);
+  color: var(--text-color);
+  transition: background-color 0.3s, color 0.3s;
+  min-height: 100vh;
 }
 
 .page-container {
   padding: 2rem;
-  min-height: 80vh;
+  min-height: calc(100vh - 60px); /* Adjust 60px based on your navbar height, if needed */
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+}
+
+/* --- Star Animation for Willow Button --- */
+.blog-button.willow {
+  position: relative;
+  overflow: hidden; /* Keeps the stars within the button bounds */
+}
+
+.blog-button.willow .star {
+  position: absolute;
+  background-color: #fdfd96; /* Light Yellow */
+  border-radius: 50%;
+  box-shadow: 0 0 5px #fdfd96, 0 0 10px #fdfd96;
+  opacity: 0;
+  animation: shoot-star 3s linear infinite;
+}
+
+.blog-button.willow .star:nth-child(1) {
+  width: 2px;
+  height: 2px;
+  top: 20%;
+  left: -10px; /* Start off-screen */
+  animation-delay: 0s;
+}
+
+.blog-button.willow .star:nth-child(2) {
+  width: 3px;
+  height: 3px;
+  top: 60%;
+  left: -10px; /* Start off-screen */
+  animation-delay: 1.5s; /* Stagger the animation */
+}
+
+@keyframes shoot-star {
+  0% {
+    transform: translateX(0);
+    opacity: 0;
+  }
+  20% {
+    opacity: 1;
+  }
+  80% {
+    transform: translateX(220px) translateY(-25px); /* Adjusted for a larger button */
+    opacity: 0;
+  }
+  100% {
+    transform: translateX(220px) translateY(-25px);
+    opacity: 0;
+  }
+}
+
+/* --- Theme-aware Scrollbar --- */
+/* Works in Webkit-based browsers (Chrome, Safari, Edge) */
+::-webkit-scrollbar {
+  width: 12px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--background-color);
+  border-left: 1px solid var(--border-color);
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: var(--text-color);
+  border-radius: 6px;
+  border: 3px solid var(--background-color);
+  opacity: 0.5;
 }

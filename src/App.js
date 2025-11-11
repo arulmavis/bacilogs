@@ -7,6 +7,8 @@ import BlogPage from './Pages/BlogPage'; // Import the new BlogPage
 import CreatePostPage from './Pages/CreatePostPage'; // Import the new CreatePostPage
 import PostDetailPage from './Pages/PostDetailPage'; // Import for viewing a single post
 import EditPostPage from './Pages/EditPostPage'; // Import for editing a post
+import NotFoundPage from './Pages/NotFoundPage'; // Import the 404 page
+import Footer from './Components/Footer'; // Import the Footer
 import './App.css';
 
 // Placeholder components for other pages
@@ -18,11 +20,21 @@ function AppContent() {
   const location = useLocation();
   const navigate = useNavigate();
   const [theme, setTheme] = useState('light');
-  const [posts, setPosts] = useState([]); // State to hold all blog posts
+  const [posts, setPosts] = useState([]);
+  const [loading, setLoading] = useState(true); // New loading state
+
+  // Simulate fetching posts on initial load
+  useEffect(() => {
+    setTimeout(() => {
+      const savedPosts = localStorage.getItem('blogPosts');
+      setPosts(savedPosts ? JSON.parse(savedPosts) : []);
+      setLoading(false);
+    }, 800); // Simulate 800ms network delay
+  }, []);
 
   const handleAddPost = (post) => {
     const newPost = { ...post, id: Date.now() }; // Add a unique ID
-    setPosts(prevPosts => [...prevPosts, newPost]);
+    setPosts(prevPosts => [...prevPosts, newPost]); // This will trigger the save to localStorage
     // Navigate back to the corresponding blog page after posting
     navigate(`/blog/${post.blogType}`);
   };
@@ -34,10 +46,15 @@ function AppContent() {
 
   const handleDeletePost = (postId, blogType) => {
     if (window.confirm('Are you sure you want to delete this post?')) {
-      setPosts(posts.filter(post => post.id !== postId));
+      setPosts(prevPosts => prevPosts.filter(post => post.id !== postId));
       navigate(`/blog/${blogType}`); // Go back to the blog list
     }
   };
+
+  // Save posts to localStorage whenever they change
+  useEffect(() => {
+    localStorage.setItem('blogPosts', JSON.stringify(posts));
+  }, [posts]);
 
   useEffect(() => {
     // Apply theme based on the current page path
@@ -49,7 +66,7 @@ function AppContent() {
       // For all other pages, use the light/dark theme state
       document.body.setAttribute('data-theme', theme);
     }
-  }, [theme, location.pathname]);
+  }, [theme, location.pathname, posts]);
 
   return (
     <div className="App">
@@ -58,7 +75,7 @@ function AppContent() {
       <main>
         <Routes>
           {/* Pass posts to HomePage to display count */}
-          <Route path="/" element={<HomePage posts={posts} />} />
+          <Route path="/" element={<HomePage posts={posts} loading={loading} />} />
             <Route path="/about" element={<AboutPage />} />
             <Route path="/news" element={<NewsPage />} />
             <Route path="/contact" element={<ContactPage />} />
@@ -67,7 +84,8 @@ function AppContent() {
               element={<BlogPage 
                 blogName="Memorial of a Willow Tree" 
                 blogType="willow"
-                posts={posts.filter(p => p.blogType === 'willow')} 
+                posts={posts.filter(p => p.blogType === 'willow')}
+                loading={loading}
               />} 
             />
             <Route 
@@ -75,7 +93,8 @@ function AppContent() {
               element={<BlogPage 
                 blogName="Eyes Hiding Secret Wishes" 
                 blogType="wishes"
-                posts={posts.filter(p => p.blogType === 'wishes')} 
+                posts={posts.filter(p => p.blogType === 'wishes')}
+                loading={loading}
               />} 
             />
             <Route 
@@ -94,8 +113,10 @@ function AppContent() {
               path="/edit-post/:postId"
               element={<EditPostPage posts={posts} onUpdatePost={handleUpdatePost} />}
             />
+            <Route path="*" element={<NotFoundPage />} />
           </Routes>
       </main>
+      <Footer />
     </div>
   );
 }
