@@ -7,8 +7,8 @@ import BlogPage from './Pages/BlogPage'; // Import the new BlogPage
 import CreatePostPage from './Pages/CreatePostPage'; // Import the new CreatePostPage
 import PostDetailPage from './Pages/PostDetailPage'; // Import for viewing a single post
 import EditPostPage from './Pages/EditPostPage'; // Import for editing a post
-import NotFoundPage from './NotFoundPage';
-import Footer from './Footer';
+import NotFoundPage from './Pages/NotFoundPage';
+import Footer from './Components/Footer';
 import './App.css';
 
 // Placeholder components for other pages
