@@ -57,8 +57,23 @@ app.delete('/api/posts/:id', async (req, res) => {
     res.json({ message: 'Post deleted' });
 });
 
-// ... add routes for GET by ID and PUT/PATCH for updates ...
-
+// UPDATE a post by ID
+app.put('/api/posts/:id', async (req, res) => {
+  try {
+    const updatedPost = await Post.findByIdAndUpdate(
+      req.params.id,
+      {
+        title: req.body.title,
+        content: req.body.content,
+        titlePicture: req.body.titlePicture,
+      },
+      { new: true } // This option returns the updated document
+    );
+    res.json(updatedPost);
+  } catch (error) {
+    res.status(400).json({ message: 'Error updating post', error });
+  }
+});
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
