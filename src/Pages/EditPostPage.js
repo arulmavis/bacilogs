@@ -8,7 +8,7 @@ import './CreatePostPage.css'; // We can reuse the same CSS
 const EditPostPage = ({ posts, onUpdatePost }) => {
   const { postId } = useParams();
   const navigate = useNavigate();
-  const postToEdit = posts.find(p => p.id === parseInt(postId));
+  const postToEdit = posts.find(p => p._id === postId);
 
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');

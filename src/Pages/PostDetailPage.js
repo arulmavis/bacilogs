@@ -1,11 +1,11 @@
 // src/Pages/PostDetailPage.js
 import React from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import './PostDetailPage.css';
 
 const PostDetailPage = ({ posts, onDelete }) => {
   const { postId } = useParams();
-  const post = posts.find(p => p.id === parseInt(postId));
+  const post = posts.find(p => p._id === postId);
 
   if (!post) {
     return <div className="page-container"><h2>Post not found!</h2></div>;
@@ -20,11 +20,11 @@ const PostDetailPage = ({ posts, onDelete }) => {
         <div className="post-body" dangerouslySetInnerHTML={{ __html: post.content }} />
       </div>
       <div className="post-actions">
-        <Link to={`/edit-post/${post.id}`} className="action-button edit">
+        <Link to={`/edit-post/${post._id}`} className="action-button edit">
           Edit Post
         </Link>
         <button 
-          onClick={() => onDelete(post.id, post.blogType)} 
+          onClick={() => onDelete(post._id, post.blogType)} 
           className="action-button delete"
         >
           Delete Post
