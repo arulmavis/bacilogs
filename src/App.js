@@ -1,5 +1,5 @@
 // src/App.js
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation, useNavigate } from 'react-router-dom';
 import Navbar from './Components/Navbar';
 import HomePage from './Pages/HomePage';
@@ -7,7 +7,7 @@ import BlogPage from './Pages/BlogPage'; // Import the new BlogPage
 import CreatePostPage from './Pages/CreatePostPage'; // Import the new CreatePostPage
 import PostDetailPage from './Pages/PostDetailPage'; // Import for viewing a single post
 import EditPostPage from './Pages/EditPostPage'; // Import for editing a post
-import NotFoundPage from './Pages/NotFoundPage';
+import NotFoundPage from './Pages/NotFoundPage'; // Import for 404 Not Found pages
 import Footer from './Components/Footer';
 import './App.css';
 
@@ -20,68 +20,39 @@ function AppContent() {
   const location = useLocation();
   const navigate = useNavigate();
   const [theme, setTheme] = useState('light');
-  const [posts, setPosts] = useState([]);
-  const [loading, setLoading] = useState(true); // New loading state
+  const [posts, setPosts] = useState([]); // State to hold all blog posts
 
-  const API_URL = process.env.REACT_APP_API_URL;
-
-  const fetchPosts = useCallback(async () => {
-    try {
-      const response = await fetch(`${API_URL}/api/posts`);
-      const data = await response.json();
-      setPosts(data);
-    } catch (error) {
-      console.error("Failed to fetch posts:", error);
-    } finally {
-      setLoading(false);
-    }
-  }, [API_URL]);
-
-  useEffect(() => {
-    fetchPosts();
-  }, [fetchPosts]);
-
-  const handleAddPost = async (post) => {
-    await fetch(`${API_URL}/api/posts`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(post),
-    });
-    fetchPosts(); // Refetch posts to update the list
+  const handleAddPost = (post) => {
+    const newPost = { ...post, id: Date.now() }; // Add a unique ID
+    setPosts(prevPosts => [...prevPosts, newPost]);
+    // Navigate back to the corresponding blog page after posting
     navigate(`/blog/${post.blogType}`);
   };
 
-  const handleUpdatePost = async (updatedPost) => {
-    // NOTE: You will need to implement the PUT/PATCH route in your backend 'server/index.js'
-    await fetch(`${API_URL}/api/posts/${updatedPost._id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(updatedPost),
-    });
-    fetchPosts();
-    navigate(`/post/${updatedPost._id}`);
+  const handleUpdatePost = (updatedPost) => {
+    setPosts(posts.map(post => (post.id === updatedPost.id ? updatedPost : post)));
+    navigate(`/post/${updatedPost.id}`); // Go back to the post detail page
   };
 
-  const handleDeletePost = async (postId, blogType) => {
+  const handleDeletePost = (postId, blogType) => {
     if (window.confirm('Are you sure you want to delete this post?')) {
-      await fetch(`${API_URL}/api/posts/${postId}`, { method: 'DELETE' });
-      fetchPosts();
-      navigate(`/blog/${blogType}`);
+      setPosts(posts.filter(post => post.id !== postId));
+      navigate(`/blog/${blogType}`); // Go back to the blog list
     }
   };
 
   useEffect(() => {
-    // MongoDB uses `_id`, so we need to adjust the logic here.
     // Apply theme based on the current page path
-    if (location.pathname.includes('/blog/willow') || (location.pathname.startsWith('/post/') && posts.find(p => p._id === location.pathname.split('/')[2])?.blogType === 'willow')) {
+    if (location.pathname.includes('/blog/willow') || (location.pathname.includes('/post/') && posts.find(p => p.id === parseInt(location.pathname.split('/')[2]))?.blogType === 'willow')) {
       document.body.setAttribute('data-theme', 'willow');
-    } else if (location.pathname.includes('/blog/wishes') || (location.pathname.startsWith('/post/') && posts.find(p => p._id === location.pathname.split('/')[2])?.blogType === 'wishes')) {
+    } else if (location.pathname.includes('/blog/wishes') || (location.pathname.includes('/post/') && posts.find(p => p.id === parseInt(location.pathname.split('/')[2]))?.blogType === 'wishes')) {
       document.body.setAttribute('data-theme', 'wishes');
     } else {
       // For all other pages, use the light/dark theme state
       document.body.setAttribute('data-theme', theme);
     }
-  }, [theme, location.pathname, posts]);
+  }, [theme, location.pathname]);
+
   return (
     <div className="App">
       {/* Pass theme state and setter to Navbar for the toggle switch */}
@@ -89,7 +60,7 @@ function AppContent() {
       <main>
         <Routes>
           {/* Pass posts to HomePage to display count */}
-          <Route path="/" element={<HomePage posts={posts} loading={loading} />} />
+          <Route path="/" element={<HomePage posts={posts} />} />
             <Route path="/about" element={<AboutPage />} />
             <Route path="/news" element={<NewsPage />} />
             <Route path="/contact" element={<ContactPage />} />
@@ -98,8 +69,7 @@ function AppContent() {
               element={<BlogPage 
                 blogName="Memorial of a Willow Tree" 
                 blogType="willow"
-                posts={posts.filter(p => p.blogType === 'willow')}
-                loading={loading}
+                posts={posts.filter(p => p.blogType === 'willow')} 
               />} 
             />
             <Route 
@@ -107,8 +77,7 @@ function AppContent() {
               element={<BlogPage 
                 blogName="Eyes Hiding Secret Wishes" 
                 blogType="wishes"
-                posts={posts.filter(p => p.blogType === 'wishes')}
-                loading={loading}
+                posts={posts.filter(p => p.blogType === 'wishes')} 
               />} 
             />
             <Route 
@@ -127,6 +96,7 @@ function AppContent() {
               path="/edit-post/:postId"
               element={<EditPostPage posts={posts} onUpdatePost={handleUpdatePost} />}
             />
+            {/* Catch-all route for 404 Not Found pages */}
             <Route path="*" element={<NotFoundPage />} />
           </Routes>
       </main>
