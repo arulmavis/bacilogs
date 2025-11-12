@@ -1,6 +1,6 @@
 // src/App.js
 import React, { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, useLocation, useNavigate, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, useLocation, useNavigate } from 'react-router-dom';
 import Navbar from './Components/Navbar';
 import HomePage from './Pages/HomePage';
 import BlogPage from './Pages/BlogPage'; // Import the new BlogPage
@@ -21,6 +21,15 @@ function AppContent() {
   const navigate = useNavigate();
   const [theme, setTheme] = useState('light');
   const [posts, setPosts] = useState([]); // State to hold all blog posts
+
+  // Fetch posts from the backend API when the component first loads
+  useEffect(() => {
+    const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+    fetch(`${apiUrl}/api/posts`)
+      .then(res => res.json())
+      .then(data => setPosts(data))
+      .catch(err => console.error("Failed to fetch posts:", err));
+  }, []); // The empty array ensures this effect runs only once
 
   const handleAddPost = (post) => {
     // Simulate adding a post with a temporary unique ID
