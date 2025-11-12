@@ -30,13 +30,13 @@
 }
 
 [data-theme='wishes'] {
-  --background-color: #f4e9d8; /* Light Brown/Beige */
-  --text-color: #3a3a3a;
-  --navbar-bg: #e9dac1;
-  --button-bg: #546d64; /* Green */
-  --button-text: #f4e9d8;
-  --button-hover-bg: #739087;
-  --primary-accent: #a87b53; /* Darker Brown */
+  --background-color: #471c1c; /* Dark Maroon */
+  --text-color: #f0e6d8; /* A light, warm off-white for contrast */
+  --navbar-bg: #2c1111; /* Slightly lighter maroon for navbar */
+  --button-bg: #803233; /* Muted maroon for buttons */
+  --button-text: #f0e6d8; /* Same as main text color */
+  --button-hover-bg: #994244; /* Slightly lighter maroon for hover */
+  --primary-accent: #b08968; /* A warm, earthy accent color */
 }
 
 body {
