@@ -3,34 +3,31 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import './BlogPage.css';
 
-const BlogPage = ({ blogName, blogType, posts }) => {
+const BlogPage = ({ blogName, blogType, posts, auth }) => {
   return (
     <div className="page-container blog-page">
       <div className="blog-header">
         <h1>{blogName}</h1>
-        <Link to={`/create-post/${blogType}`} className="write-blog-button">
-          Write a Blog
-        </Link>
+        {/* This is the important part: only show button if auth exists */}
+        {auth && (
+          <Link to={`/create-post/${blogType}`} className="btn btn-create">
+            &#43; Create New Post
+          </Link>
+        )}
       </div>
 
       <div className="post-list">
         {posts.length > 0 ? (
           posts.map(post => (
-            <div key={post._id} className="post-summary">
-              {post.titlePicture && <img src={post.titlePicture} alt={post.title} className="post-summary-image" />}
-              <div className="post-summary-content">
-                <h2>{post.title}</h2>
-                {/* The content from the editor is HTML, so we use dangerouslySetInnerHTML */}
-                {/* We'll show a snippet here in a real app, but for now, we show it all */}
-                <div dangerouslySetInnerHTML={{ __html: post.content.substring(0, 200) + '...' }} />
-                <Link to={`/post/${post._id}`} className="read-more">Read More</Link>
-              </div>
+            <div key={post._id} className="post-preview">
+              <h2><Link to={`/post/${post._id}`}>{post.title}</Link></h2>
+              <p className="preview-meta">By {post.author} on {new Date(post.createdAt).toLocaleDateString()}</p>
+              <p className="preview-content">{post.content.substring(0, 150).replace(/<[^>]+>/g, '')}...</p>
+              <Link to={`/post/${post._id}`} className="read-more">Read More &rarr;</Link>
             </div>
           ))
         ) : (
-          <div className="no-posts">
-            <p>No blog posts yet. Be the first to write one!</p>
-          </div>
+          <p>No posts yet. Why not create one?</p>
         )}
       </div>
     </div>

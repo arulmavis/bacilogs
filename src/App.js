@@ -156,6 +156,7 @@ function AppContent() {
                 blogName="Memorial of a Willow Tree" 
                 blogType="willow"
                 posts={posts.filter(p => p.blogType === 'willow')} 
+                auth={auth}
               />} 
             />
             <Route 
@@ -164,6 +165,7 @@ function AppContent() {
                 blogName="Eyes Hiding Secret Wishes" 
                 blogType="wishes"
                 posts={posts.filter(p => p.blogType === 'wishes')} 
+                auth={auth}
               />} 
             />
             <Route 
