@@ -34,9 +34,9 @@ const Post = mongoose.model('Post', postSchema);
 
 // --- Define Your User Schema and Model ---
 const userSchema = new mongoose.Schema({
-  username: { type: String, required: true, unique: true },
-  passwordHash: { type: String, required: true }
-});
+  username: { type: String, required: true, unique: true, trim: true },
+  passwordHash: { type: String, required: true },
+}, { collection: 'user_info' }); // Explicitly use the 'user_info' collection
 const User = mongoose.model('User', userSchema);
 
 // LOGIN Route
@@ -44,8 +44,8 @@ app.post('/api/auth/login', async (req, res) => {
   const { username, password } = req.body;
 
   try {
-    // Find user in the database
-    const user = await User.findOne({ username });
+    // Find user in the database, case-insensitively
+    const user = await User.findOne({ username: new RegExp('^' + username + '$', 'i') });
     if (!user) {
       return res.status(400).json({ message: 'Invalid credentials' });
     }

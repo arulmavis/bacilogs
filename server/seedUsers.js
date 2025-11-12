@@ -4,9 +4,9 @@ const bcrypt = require('bcryptjs');
 
 // Define the User schema and model EXACTLY as in index.js
 const userSchema = new mongoose.Schema({
-  username: { type: String, required: true, unique: true },
-  passwordHash: { type: String, required: true }
-});
+  username: { type: String, required: true, unique: true, trim: true },
+  passwordHash: { type: String, required: true },
+}, { collection: 'user_info' }); // Explicitly use the 'user_info' collection
 const User = mongoose.model('User', userSchema);
 
 const usersToSeed = [

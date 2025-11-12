@@ -43,22 +43,67 @@ function AppContent() {
     navigate('/');
   };
 
-  const handleAddPost = (post) => {
-    // This will be replaced with an API call
-    const newPost = { ...post, id: Date.now(), _id: Date.now().toString() }; // Use _id for consistency with MongoDB
-    setPosts(prevPosts => [...prevPosts, newPost]);
-    navigate(`/blog/${post.blogType}`);
+  const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+
+  const fetchPosts = () => {
+    fetch(`${apiUrl}/api/posts`)
+      .then(res => {
+        if (!res.ok) throw new Error('Network response was not ok');
+        return res.json();
+      })
+      .then(data => setPosts(data))
+      .catch(err => console.error("Failed to fetch posts:", err));
   };
 
-  const handleUpdatePost = (updatedPost) => {
-    setPosts(posts.map(post => (post._id === updatedPost._id ? updatedPost : post)));
-    navigate(`/post/${updatedPost._id}`);
+  const handleAddPost = async (post) => {
+    try {
+      const response = await fetch(`${apiUrl}/api/posts`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${auth.token}`,
+        },
+        body: JSON.stringify(post),
+      });
+      if (!response.ok) throw new Error('Failed to create post');
+      fetchPosts(); // Re-fetch all posts to get the latest list
+      navigate(`/blog/${post.blogType}`);
+    } catch (error) {
+      console.error('Error adding post:', error);
+    }
   };
 
-  const handleDeletePost = (postId, blogType) => {
+  const handleUpdatePost = async (updatedPost) => {
+    try {
+      const response = await fetch(`${apiUrl}/api/posts/${updatedPost._id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${auth.token}`,
+        },
+        body: JSON.stringify(updatedPost),
+      });
+      if (!response.ok) throw new Error('Failed to update post');
+      fetchPosts(); // Re-fetch all posts
+      navigate(`/post/${updatedPost._id}`);
+    } catch (error) {
+      console.error('Error updating post:', error);
+    }
+  };
+
+  const handleDeletePost = async (postId, blogType) => {
     if (window.confirm('Are you sure you want to delete this post?')) {
-      setPosts(posts.filter(post => post._id !== postId));
-      navigate(`/blog/${blogType}`);
+      try {
+        const response = await fetch(`${apiUrl}/api/posts/${postId}`, {
+          method: 'DELETE',
+          headers: { 'Authorization': `Bearer ${auth.token}` },
+        });
+        if (!response.ok) throw new Error('Failed to delete post');
+        fetchPosts(); // Re-fetch all posts
+        navigate(`/blog/${blogType}`);
+      } catch (error) {
+        console.error('Error deleting post:', error);
+      }
     }
   };
 
@@ -76,11 +121,7 @@ function AppContent() {
 
   // Fetch posts from API on component mount
   useEffect(() => {
-    const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:5000';
-    fetch(`${apiUrl}/api/posts`)
-      .then(res => res.json())
-      .then(data => setPosts(data))
-      .catch(err => console.error("Failed to fetch posts:", err));
+    fetchPosts();
   }, []);
 
   useEffect(() => {
