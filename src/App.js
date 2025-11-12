@@ -1,5 +1,5 @@
 // src/App.js
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation, useNavigate, Navigate } from 'react-router-dom';
 import Navbar from './Components/Navbar';
 import HomePage from './Pages/HomePage';
@@ -46,16 +46,16 @@ function AppContent() {
   const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:5000';
 
   // Fetch posts from the backend API when the component first loads
-  const fetchPosts = () => {
+  const fetchPosts = useCallback(() => {
     fetch(`${apiUrl}/api/posts`)
       .then(res => res.json())
       .then(data => setPosts(data))
       .catch(err => console.error("Failed to fetch posts:", err));
-  };
+  }, [apiUrl]);
 
   useEffect(() => {
     fetchPosts();
-  }, []);
+  }, [fetchPosts]);
 
   const handleAddPost = async (post) => {
     if (!auth) return alert('You must be logged in to create a post.');
