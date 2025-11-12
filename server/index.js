@@ -67,12 +67,15 @@ app.post('/api/auth/login', async (req, res) => {
 });
 
 // Auth Middleware to protect routes
-const protect = (req, res, next) => {
+const protect = async (req, res, next) => {
   let token;
   if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
     try {
       token = req.headers.authorization.split(' ')[1];
-      jwt.verify(token, process.env.JWT_SECRET);
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      // Attach user to the request, but without the password hash
+      req.user = await User.findById(decoded.id).select('-passwordHash');
+      
       next();
     } catch (error) {
       res.status(401).json({ message: 'Not authorized, token failed' });
@@ -98,7 +101,7 @@ app.post('/api/posts', protect, async (req, res) => {
   const newPost = new Post({
     title: req.body.title,
     content: req.body.content,
-    author: req.body.author,
+    author: req.user.username, // Automatically set the author from the logged-in user
     blogType: req.body.blogType
   });
   const savedPost = await newPost.save();
