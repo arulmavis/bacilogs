@@ -1,12 +1,13 @@
 // src/App.js
 import React, { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, useLocation, useNavigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, useLocation, useNavigate, Navigate } from 'react-router-dom';
 import Navbar from './Components/Navbar';
 import HomePage from './Pages/HomePage';
 import BlogPage from './Pages/BlogPage'; // Import the new BlogPage
 import CreatePostPage from './Pages/CreatePostPage'; // Import the new CreatePostPage
 import PostDetailPage from './Pages/PostDetailPage'; // Import for viewing a single post
 import EditPostPage from './Pages/EditPostPage'; // Import for editing a post
+import LoginPage from './Pages/LoginPage';
 import NotFoundPage from './Pages/NotFoundPage'; // Import for 404 Not Found pages
 import Footer from './Components/Footer';
 import './App.css';
@@ -20,35 +21,103 @@ function AppContent() {
   const location = useLocation();
   const navigate = useNavigate();
   const [theme, setTheme] = useState('light');
-  const [posts, setPosts] = useState([]); // State to hold all blog posts
+  const [posts, setPosts] = useState([]);
+  const [auth, setAuth] = useState(null); // Holds login state { user, token }
+
+  // On initial load, check local storage for a saved login session
+  useEffect(() => {
+    const storedAuth = localStorage.getItem('bacilogs_auth');
+    if (storedAuth) {
+      setAuth(JSON.parse(storedAuth));
+    }
+  }, []);
+
+  const handleLogin = (authData) => {
+    localStorage.setItem('bacilogs_auth', JSON.stringify(authData));
+    setAuth(authData);
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('bacilogs_auth');
+    setAuth(null);
+    navigate('/');
+  };
+
+  const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:5000';
 
   // Fetch posts from the backend API when the component first loads
-  useEffect(() => {
-    const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+  const fetchPosts = () => {
     fetch(`${apiUrl}/api/posts`)
       .then(res => res.json())
       .then(data => setPosts(data))
       .catch(err => console.error("Failed to fetch posts:", err));
-  }, []); // The empty array ensures this effect runs only once
-
-  const handleAddPost = (post) => {
-    // Simulate adding a post with a temporary unique ID
-    const newPost = { ...post, _id: Date.now().toString(), createdAt: new Date().toISOString() };
-    setPosts(prevPosts => [...prevPosts, newPost]);
-    // Navigate back to the corresponding blog page after posting
-    navigate(`/blog/${post.blogType}`);
   };
 
-  const handleUpdatePost = (updatedPost) => {
-    setPosts(posts.map(post => (post._id === updatedPost._id ? updatedPost : post)));
-    navigate(`/post/${updatedPost._id}`); // Go back to the post detail page
-  };
+  useEffect(() => {
+    fetchPosts();
+  }, []);
 
-  const handleDeletePost = (postId, blogType) => {
-    if (window.confirm('Are you sure you want to delete this post?')) {
-      setPosts(posts.filter(post => post._id !== postId));
-      navigate(`/blog/${blogType}`); // Go back to the blog list
+  const handleAddPost = async (post) => {
+    if (!auth) return alert('You must be logged in to create a post.');
+    try {
+      const response = await fetch(`${apiUrl}/api/posts`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${auth.token}`,
+        },
+        body: JSON.stringify(post),
+      });
+      if (!response.ok) throw new Error('Failed to create post');
+      fetchPosts(); // Re-fetch all posts to get the latest list
+      navigate(`/blog/${post.blogType}`);
+    } catch (error) {
+      console.error('Error adding post:', error);
     }
+  };
+
+  const handleUpdatePost = async (updatedPost) => {
+    if (!auth) return alert('You must be logged in to update a post.');
+    try {
+      const response = await fetch(`${apiUrl}/api/posts/${updatedPost._id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${auth.token}`,
+        },
+        body: JSON.stringify(updatedPost),
+      });
+      if (!response.ok) throw new Error('Failed to update post');
+      fetchPosts(); // Re-fetch all posts
+      navigate(`/post/${updatedPost._id}`);
+    } catch (error) {
+      console.error('Error updating post:', error);
+    }
+  };
+
+  const handleDeletePost = async (postId, blogType) => {
+    if (!auth) return alert('You must be logged in to delete a post.');
+    if (window.confirm('Are you sure you want to delete this post?')) {
+      try {
+        const response = await fetch(`${apiUrl}/api/posts/${postId}`, {
+          method: 'DELETE',
+          headers: { 'Authorization': `Bearer ${auth.token}` },
+        });
+        if (!response.ok) throw new Error('Failed to delete post');
+        fetchPosts(); // Re-fetch all posts
+        navigate(`/blog/${blogType}`);
+      } catch (error) {
+        console.error('Error deleting post:', error);
+      }
+    }
+  };
+
+  // A component to protect routes that require login
+  const ProtectedRoute = ({ children }) => {
+    if (!auth) {
+      return <Navigate to="/login" state={{ from: location }} replace />;
+    }
+    return children;
   };
 
   useEffect(() => {
@@ -68,7 +137,7 @@ function AppContent() {
   return (
     <div className="App">
       {/* Pass theme state and setter to Navbar for the toggle switch */}
-      <Navbar theme={theme} setTheme={setTheme} />
+      <Navbar theme={theme} setTheme={setTheme} auth={auth} onLogout={handleLogout} />
       <main>
         <Routes>
           {/* Pass posts to HomePage to display count */}
@@ -76,12 +145,14 @@ function AppContent() {
             <Route path="/about" element={<AboutPage />} />
             <Route path="/news" element={<NewsPage />} />
             <Route path="/contact" element={<ContactPage />} />
+            <Route path="/login" element={<LoginPage onLogin={handleLogin} />} />
             <Route 
               path="/blog/willow" 
               element={<BlogPage 
                 blogName="Memorial of a Willow Tree" 
                 blogType="willow"
                 posts={posts.filter(p => p.blogType === 'willow')} 
+                auth={auth}
               />} 
             />
             <Route 
@@ -90,23 +161,31 @@ function AppContent() {
                 blogName="Eyes Hiding Secret Wishes" 
                 blogType="wishes"
                 posts={posts.filter(p => p.blogType === 'wishes')} 
+                auth={auth}
               />}
             />
             <Route 
               path="/create-post/willow"
-              element={<CreatePostPage blogType="willow" onAddPost={handleAddPost} />}
+              element={<ProtectedRoute><CreatePostPage blogType="willow" onAddPost={handleAddPost} /></ProtectedRoute>}
             />
             <Route 
               path="/create-post/wishes"
-              element={<CreatePostPage blogType="wishes" onAddPost={handleAddPost} />}
+              element={<ProtectedRoute><CreatePostPage blogType="wishes" onAddPost={handleAddPost} /></ProtectedRoute>}
             />
             <Route 
               path="/post/:postId"
-              element={<PostDetailPage posts={posts} onDelete={handleDeletePost} />}
+              element={<PostDetailPage posts={posts} onDelete={handleDeletePost} auth={auth} />}
             />
             <Route 
               path="/edit-post/:postId"
-              element={<EditPostPage posts={posts} onUpdatePost={handleUpdatePost} />}
+              element={
+                <ProtectedRoute>
+                  <EditPostPage 
+                    posts={posts} 
+                    onUpdatePost={handleUpdatePost} 
+                  />
+                </ProtectedRoute>
+              }
             />
             {/* Catch-all route for 404 Not Found pages */}
             <Route path="*" element={<NotFoundPage />} />

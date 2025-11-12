@@ -3,14 +3,16 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import './BlogPage.css';
 
-const BlogPage = ({ blogName, blogType, posts }) => {
+const BlogPage = ({ blogName, blogType, posts, auth }) => {
   return (
     <div className="page-container blog-page">
       <div className="blog-header">
         <h1>{blogName}</h1>
-        <Link to={`/create-post/${blogType}`} className="write-blog-button">
-          Write a Blog
-        </Link>
+        {auth && (
+          <Link to={`/create-post/${blogType}`} className="write-blog-button">
+            Write a Blog
+          </Link>
+        )}
       </div>
 
       <div className="post-list">

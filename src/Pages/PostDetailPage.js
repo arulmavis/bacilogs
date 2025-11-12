@@ -3,7 +3,7 @@ import React from 'react';
 import { useParams, Link } from 'react-router-dom';
 import './PostDetailPage.css';
 
-const PostDetailPage = ({ posts, onDelete }) => {
+const PostDetailPage = ({ posts, onDelete, auth }) => {
   const { postId } = useParams();
   const post = posts.find(p => p._id === postId);
 
@@ -19,17 +19,19 @@ const PostDetailPage = ({ posts, onDelete }) => {
         {/* Render the HTML content from the rich text editor */}
         <div className="post-body" dangerouslySetInnerHTML={{ __html: post.content }} />
       </div>
-      <div className="post-actions">
-        <Link to={`/edit-post/${post._id}`} className="action-button edit">
-          Edit Post
-        </Link>
-        <button 
-          onClick={() => onDelete(post._id, post.blogType)} 
-          className="action-button delete"
-        >
-          Delete Post
-        </button>
-      </div>
+      {auth && (
+        <div className="post-actions">
+          <Link to={`/edit-post/${post._id}`} className="action-button edit">
+            Edit Post
+          </Link>
+          <button 
+            onClick={() => onDelete(post._id, post.blogType)} 
+            className="action-button delete"
+          >
+            Delete Post
+          </button>
+        </div>
+      )}
       <Link to={`/blog/${post.blogType}`} className="back-link">
         &larr; Back to {post.blogType === 'willow' ? 'Memorial of a Willow Tree' : 'Eyes Hiding Secret Wishes'}
       </Link>
