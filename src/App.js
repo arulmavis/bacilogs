@@ -17,7 +17,7 @@ const AboutPage = () => <div className="page-container"><h1>About Us</h1></div>;
 const NewsPage = () => <div className="page-container"><h1>News</h1></div>;
 const ContactPage = () => <div className="page-container"><h1>Contact</h1></div>;
 
-function AppContent() {
+function App() {
   const location = useLocation();
   const navigate = useNavigate();
   const [theme, setTheme] = useState('light');
@@ -140,17 +140,18 @@ function AppContent() {
 
   return (
     <div className="App">
-      {/* Pass theme state and setter to Navbar for the toggle switch */}
-      <Navbar theme={theme} setTheme={setTheme} auth={auth} onLogout={handleLogout} />
-      <main>
-        <Routes>
-          {/* Pass posts to HomePage to display count */}
-          <Route path="/" element={<HomePage posts={posts} />} />
+      <Router>
+        {/* Pass theme state and setter to Navbar for the toggle switch */}
+        <Navbar theme={theme} setTheme={setTheme} auth={auth} onLogout={handleLogout} />
+        <main>
+          <Routes>
+            {/* Pass posts to HomePage to display count */}
+            <Route path="/" element={<HomePage posts={posts} />} />
             <Route path="/about" element={<AboutPage />} />
             <Route path="/news" element={<NewsPage />} />
             <Route path="/contact" element={<ContactPage />} />
             <Route path="/login" element={<LoginPage onLogin={handleLogin} />} />
-            <Route 
+            <Route
               path="/blog/willow" 
               element={<BlogPage 
                 blogName="Memorial of a Willow Tree" 
@@ -159,7 +160,7 @@ function AppContent() {
                 auth={auth}
               />} 
             />
-            <Route 
+            <Route
               path="/blog/wishes" 
               element={<BlogPage 
                 blogName="Eyes Hiding Secret Wishes" 
@@ -168,19 +169,19 @@ function AppContent() {
                 auth={auth}
               />} 
             />
-            <Route 
+            <Route
               path="/create-post/willow"
               element={<ProtectedRoute><CreatePostPage blogType="willow" onAddPost={handleAddPost} /></ProtectedRoute>}
             />
-            <Route 
+            <Route
               path="/create-post/wishes"
               element={<ProtectedRoute><CreatePostPage blogType="wishes" onAddPost={handleAddPost} /></ProtectedRoute>}
             />
-            <Route 
+            <Route
               path="/post/:postId"
               element={<PostDetailPage posts={posts} onDelete={handleDeletePost} auth={auth} />}
             />
-            <Route 
+            <Route
               path="/edit-post/:postId"
               element={
                 <ProtectedRoute>
@@ -194,17 +195,10 @@ function AppContent() {
             {/* Catch-all route for 404 Not Found pages */}
             <Route path="*" element={<NotFoundPage />} />
           </Routes>
-      </main>
-      <Footer />
+        </main>
+        <Footer />
+      </Router>
     </div>
-  );
-}
-
-function App() {
-  return (
-    <Router>
-      <AppContent />
-    </Router>
   );
 }
 
