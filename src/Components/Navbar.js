@@ -4,7 +4,7 @@ import { NavLink, Link } from 'react-router-dom';
 import ThemeToggle from './ThemeToggle';
 import './navbar.css';
 
-const Navbar = ({ theme, setTheme, auth, onLogout }) => {
+const Navbar = ({ theme, setTheme }) => {
   return (
     <nav className="navbar">
       <div className="navbar-logo">
@@ -16,16 +16,6 @@ const Navbar = ({ theme, setTheme, auth, onLogout }) => {
         <NavLink to="/contact">Contact</NavLink>
       </div>
       <div className="navbar-right">
-        {auth ? (
-          <>
-            <span className="navbar-username">Welcome, {auth.user.username}!</span>
-            <button onClick={onLogout} className="navbar-button logout-button">Logout</button>
-          </>
-        ) : (
-          <Link to="/login" className="navbar-button login-button">
-            Login
-          </Link>
-        )}
         <ThemeToggle theme={theme} setTheme={setTheme} />
       </div>
     </nav>

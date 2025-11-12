@@ -2,6 +2,8 @@ require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -30,6 +32,61 @@ const postSchema = new mongoose.Schema({
 });
 const Post = mongoose.model('Post', postSchema);
 
+// --- Define Your User Schema and Model ---
+const userSchema = new mongoose.Schema({
+  username: { type: String, required: true, unique: true, trim: true },
+  passwordHash: { type: String, required: true },
+}, { collection: 'user_info' }); // Explicitly use the 'user_info' collection
+const User = mongoose.model('User', userSchema);
+
+// LOGIN Route
+app.post('/api/auth/login', async (req, res) => {
+  const { username, password } = req.body;
+
+  try {
+    // Find user in the database, case-insensitively
+    const user = await User.findOne({ username: new RegExp('^' + username + '$', 'i') });
+    if (!user) {
+      return res.status(400).json({ message: 'Invalid credentials' });
+    }
+
+    // Check password
+    const isMatch = await bcrypt.compare(password, user.passwordHash);
+    if (!isMatch) {
+      return res.status(400).json({ message: 'Invalid credentials' });
+    }
+
+    // Create and return token
+    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '1d' });
+    res.json({ token, user: { id: user._id, username: user.username } });
+
+  } catch (error) {
+    console.error('Login error:', error);
+    res.status(500).json({ message: 'Server error during login' });
+  }
+});
+
+// Auth Middleware to protect routes
+const protect = async (req, res, next) => {
+  let token;
+  if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
+    try {
+      token = req.headers.authorization.split(' ')[1];
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      // Attach user to the request, but without the password hash
+      req.user = await User.findById(decoded.id).select('-passwordHash');
+      
+      next();
+    } catch (error) {
+      res.status(401).json({ message: 'Not authorized, token failed' });
+    }
+  }
+
+  if (!token) {
+    res.status(401).json({ message: 'Not authorized, no token' });
+  }
+};
+
 
 // --- Define API Routes ---
 
@@ -40,11 +97,11 @@ app.get('/api/posts', async (req, res) => {
 });
 
 // POST a new post
-app.post('/api/posts', async (req, res) => {
+app.post('/api/posts', protect, async (req, res) => {
   const newPost = new Post({
     title: req.body.title,
     content: req.body.content,
-    author: req.body.author,
+    author: req.user.username, // Automatically set the author from the logged-in user
     blogType: req.body.blogType
   });
   const savedPost = await newPost.save();
@@ -52,26 +109,55 @@ app.post('/api/posts', async (req, res) => {
 });
 
 // DELETE a post
-app.delete('/api/posts/:id', async (req, res) => {
-    await Post.findByIdAndDelete(req.params.id);
-    res.json({ message: 'Post deleted' });
+app.delete('/api/posts/:id', protect, async (req, res) => {
+  try {
+    const post = await Post.findById(req.params.id);
+
+    if (!post) {
+      return res.status(404).json({ message: 'Post not found' });
+    }
+
+    // Check if the logged-in user is the author of the post
+    if (post.author.toString() !== req.user.username.toString()) {
+      return res.status(401).json({ message: 'User not authorized' });
+    }
+
+    await post.deleteOne();
+
+    res.json({ message: 'Post deleted successfully' });
+  } catch (error) {
+    console.error('Delete error:', error);
+    res.status(500).json({ message: 'Server error during post deletion' });
+  }
 });
 
 // UPDATE a post by ID
-app.put('/api/posts/:id', async (req, res) => {
+app.put('/api/posts/:id', protect, async (req, res) => {
   try {
+    const post = await Post.findById(req.params.id);
+
+    if (!post) {
+      return res.status(404).json({ message: 'Post not found' });
+    }
+
+    // Check if the logged-in user is the author of the post
+    if (post.author.toString() !== req.user.username.toString()) {
+      return res.status(401).json({ message: 'User not authorized' });
+    }
+
     const updatedPost = await Post.findByIdAndUpdate(
       req.params.id,
       {
         title: req.body.title,
         content: req.body.content,
-        titlePicture: req.body.titlePicture,
+        // author should not change, but we could add other fields here
       },
       { new: true } // This option returns the updated document
     );
     res.json(updatedPost);
   } catch (error) {
-    res.status(400).json({ message: 'Error updating post', error });
+    console.error('Update error:', error);
+    res.status(500).json({ message: 'Server error during post update' });
   }
 });
 
