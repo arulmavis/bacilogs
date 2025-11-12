@@ -110,25 +110,54 @@ app.post('/api/posts', protect, async (req, res) => {
 
 // DELETE a post
 app.delete('/api/posts/:id', protect, async (req, res) => {
-    await Post.findByIdAndDelete(req.params.id);
-    res.json({ message: 'Post deleted' });
+  try {
+    const post = await Post.findById(req.params.id);
+
+    if (!post) {
+      return res.status(404).json({ message: 'Post not found' });
+    }
+
+    // Check if the logged-in user is the author of the post
+    if (post.author.toString() !== req.user.username.toString()) {
+      return res.status(401).json({ message: 'User not authorized' });
+    }
+
+    await post.deleteOne();
+
+    res.json({ message: 'Post deleted successfully' });
+  } catch (error) {
+    console.error('Delete error:', error);
+    res.status(500).json({ message: 'Server error during post deletion' });
+  }
 });
 
 // UPDATE a post by ID
 app.put('/api/posts/:id', protect, async (req, res) => {
   try {
+    const post = await Post.findById(req.params.id);
+
+    if (!post) {
+      return res.status(404).json({ message: 'Post not found' });
+    }
+
+    // Check if the logged-in user is the author of the post
+    if (post.author.toString() !== req.user.username.toString()) {
+      return res.status(401).json({ message: 'User not authorized' });
+    }
+
     const updatedPost = await Post.findByIdAndUpdate(
       req.params.id,
       {
         title: req.body.title,
         content: req.body.content,
-        titlePicture: req.body.titlePicture,
+        // author should not change, but we could add other fields here
       },
       { new: true } // This option returns the updated document
     );
     res.json(updatedPost);
   } catch (error) {
-    res.status(400).json({ message: 'Error updating post', error });
+    console.error('Update error:', error);
+    res.status(500).json({ message: 'Server error during post update' });
   }
 });
 
