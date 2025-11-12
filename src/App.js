@@ -95,7 +95,7 @@ function AppContent() {
       // For all other pages, use the light/dark theme state
       document.body.setAttribute('data-theme', theme);
     }
-  }, [theme, location.pathname, posts]);
+  }, [theme, location, posts]);
 
   return (
     <div className="App">

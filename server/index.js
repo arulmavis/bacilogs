@@ -32,44 +32,38 @@ const postSchema = new mongoose.Schema({
 });
 const Post = mongoose.model('Post', postSchema);
 
-// --- User "Database" and Auth ---
-// For this simple case, we'll store users in an array.
-// In a real app, this would be in a MongoDB collection.
-// Passwords should be hashed with a script, not stored in plain text.
-// Example: const salt = await bcrypt.genSalt(10); const hashedPassword = await bcrypt.hash('your_password', salt);
-const users = [
-  {
-    id: 1,
-    username: 'arül', // Your new username
-    // This is the CORRECT secure hash for your password '(arülblog3101)'
-    passwordHash: '$2a$10$4a2z/bS258B..9I.qj43I.pW0i1s.GzC9VfH8gIm/sXp3p.GvA5i.' 
-  },
-  {
-    id: 2,
-    username: 'gizemeh', // Your friend's username
-    // This is a secure hash for the password '(gizemehblog3101)'
-    passwordHash: '$2a$10$zL4bS3g5R2h3K1jF0oP9q.uY7wX6vC5bH4nI9oP2eF6zK3wG5bH4'
-  }
-];
+// --- Define Your User Schema and Model ---
+const userSchema = new mongoose.Schema({
+  username: { type: String, required: true, unique: true },
+  passwordHash: { type: String, required: true }
+});
+const User = mongoose.model('User', userSchema);
 
 // LOGIN Route
 app.post('/api/auth/login', async (req, res) => {
   const { username, password } = req.body;
-  const user = users.find(u => u.username === username);
 
-  if (!user) {
-    return res.status(400).json({ message: 'Invalid credentials' });
+  try {
+    // Find user in the database
+    const user = await User.findOne({ username });
+    if (!user) {
+      return res.status(400).json({ message: 'Invalid credentials' });
+    }
+
+    // Check password
+    const isMatch = await bcrypt.compare(password, user.passwordHash);
+    if (!isMatch) {
+      return res.status(400).json({ message: 'Invalid credentials' });
+    }
+
+    // Create and return token
+    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '1d' });
+    res.json({ token, user: { id: user._id, username: user.username } });
+
+  } catch (error) {
+    console.error('Login error:', error);
+    res.status(500).json({ message: 'Server error during login' });
   }
-
-  const isMatch = await bcrypt.compare(password, user.passwordHash);
-
-  if (!isMatch) {
-    return res.status(400).json({ message: 'Invalid credentials' });
-  }
-
-  const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET, { expiresIn: '1d' });
-
-  res.json({ token, user: { id: user.id, username: user.username } });
 });
 
 // Auth Middleware to protect routes
