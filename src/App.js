@@ -85,10 +85,11 @@ function AppContent() {
 
   useEffect(() => {
     // Apply theme based on the current page path
-    const postId = location.pathname.split('/')[2];
-    if (location.pathname.includes('/blog/willow') || (location.pathname.startsWith('/post/') && posts.find(p => p._id === postId)?.blogType === 'willow')) {
+    const pathParts = location.pathname.split('/');
+    const postId = pathParts[2];
+    if (location.pathname.includes('/blog/willow') || (pathParts[1] === 'post' && posts.find(p => p._id === postId)?.blogType === 'willow')) {
       document.body.setAttribute('data-theme', 'willow');
-    } else if (location.pathname.includes('/blog/wishes') || (location.pathname.startsWith('/post/') && posts.find(p => p._id === postId)?.blogType === 'wishes')) {
+    } else if (location.pathname.includes('/blog/wishes') || (pathParts[1] === 'post' && posts.find(p => p._id === postId)?.blogType === 'wishes')) {
       document.body.setAttribute('data-theme', 'wishes');
     } else {
       // For all other pages, use the light/dark theme state
