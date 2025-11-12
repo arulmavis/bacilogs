@@ -48,7 +48,7 @@ const LoginPage = ({ onLogin }) => {
                     <label htmlFor="password">Password</label>
                     <input type="password" id="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
                 </div>
-                <button type="submit" className="submit-post-button">Login</button>
+                <button type="submit" className="btn">Login</button>
             </form>
         </div>
     );
