@@ -1,7 +1,7 @@
 // src/App.js
 import React, { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, useLocation, useNavigate, Navigate } from 'react-router-dom';
-import Navbar from './Components/Navbar';
+import { BrowserRouter as Router, Routes, Route, useLocation, useNavigate } from 'react-router-dom';
+import Navbar from './Components/Navbar'; // Assuming Navbar is simplified as well
 import HomePage from './Pages/HomePage';
 import BlogPage from './Pages/BlogPage'; // Import the new BlogPage
 import CreatePostPage from './Pages/CreatePostPage'; // Import the new CreatePostPage
@@ -29,108 +29,27 @@ function AppContent() {
   const location = useLocation();
   const navigate = useNavigate();
   const [theme, setTheme] = useState('light');
-  const [posts, setPosts] = useState([]);
-  const [auth, setAuth] = useState(null); // { user, token }
+  const [posts, setPosts] = useState([]); // State to hold all blog posts
 
-  // Check for auth token in local storage on initial load
-  useEffect(() => {
-    const storedAuth = localStorage.getItem('bacilogs_auth');
-    if (storedAuth) {
-      setAuth(JSON.parse(storedAuth));
-    }
-  }, []);
-
-  const handleLogin = (authData) => {
-    localStorage.setItem('bacilogs_auth', JSON.stringify(authData));
-    setAuth(authData);
+  const handleAddPost = (post) => {
+    // Simulate adding a post with a temporary unique ID
+    const newPost = { ...post, _id: Date.now().toString(), createdAt: new Date().toISOString() };
+    setPosts(prevPosts => [...prevPosts, newPost]);
+    // Navigate back to the corresponding blog page after posting
+    navigate(`/blog/${post.blogType}`);
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem('bacilogs_auth');
-    setAuth(null);
-    navigate('/');
+  const handleUpdatePost = (updatedPost) => {
+    setPosts(posts.map(post => (post._id === updatedPost._id ? updatedPost : post)));
+    navigate(`/post/${updatedPost._id}`); // Go back to the post detail page
   };
 
-  const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:5000';
-
-  const fetchPosts = () => {
-    fetch(`${apiUrl}/api/posts`)
-      .then(res => {
-        if (!res.ok) throw new Error('Network response was not ok');
-        return res.json();
-      })
-      .then(data => setPosts(data))
-      .catch(err => console.error("Failed to fetch posts:", err));
-  };
-
-  const handleAddPost = async (post) => {
-    try {
-      const response = await fetch(`${apiUrl}/api/posts`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${auth.token}`,
-        },
-        body: JSON.stringify(post),
-      });
-      if (!response.ok) throw new Error('Failed to create post');
-      fetchPosts(); // Re-fetch all posts to get the latest list
-      navigate(`/blog/${post.blogType}`);
-    } catch (error) {
-      console.error('Error adding post:', error);
-    }
-  };
-
-  const handleUpdatePost = async (updatedPost) => {
-    try {
-      const response = await fetch(`${apiUrl}/api/posts/${updatedPost._id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${auth.token}`,
-        },
-        body: JSON.stringify(updatedPost),
-      });
-      if (!response.ok) throw new Error('Failed to update post');
-      fetchPosts(); // Re-fetch all posts
-      navigate(`/post/${updatedPost._id}`);
-    } catch (error) {
-      console.error('Error updating post:', error);
-    }
-  };
-
-  const handleDeletePost = async (postId, blogType) => {
+  const handleDeletePost = (postId, blogType) => {
     if (window.confirm('Are you sure you want to delete this post?')) {
-      try {
-        const response = await fetch(`${apiUrl}/api/posts/${postId}`, {
-          method: 'DELETE',
-          headers: { 'Authorization': `Bearer ${auth.token}` },
-        });
-        if (!response.ok) throw new Error('Failed to delete post');
-        fetchPosts(); // Re-fetch all posts
-        navigate(`/blog/${blogType}`);
-      } catch (error) {
-        console.error('Error deleting post:', error);
-      }
+      setPosts(posts.filter(post => post._id !== postId));
+      navigate(`/blog/${blogType}`); // Go back to the blog list
     }
   };
-
-  // A simple protected route component
-  const ProtectedRoute = ({ children }) => {
-    if (!auth) {
-      // Redirect them to the /login page, but save the current location they were
-      // trying to go to. This allows us to send them along to that page after a
-      // successful login.
-      return <Navigate to="/login" state={{ from: location }} replace />;
-    }
-
-    return children;
-  };
-
-  // Fetch posts from API on component mount
-  useEffect(() => {
-    fetchPosts();
-  }, []);
 
   useEffect(() => {
     // Apply theme based on the current page path
@@ -144,12 +63,12 @@ function AppContent() {
       // For all other pages, use the light/dark theme state
       document.body.setAttribute('data-theme', theme);
     }
-  }, [theme, location, posts]);
+  }, [theme, location.pathname, posts]);
 
   return (
     <div className="App">
       {/* Pass theme state and setter to Navbar for the toggle switch */}
-      <Navbar theme={theme} setTheme={setTheme} auth={auth} onLogout={handleLogout} />
+      <Navbar theme={theme} setTheme={setTheme} />
       <main>
         <Routes>
           {/* Pass posts to HomePage to display count */}
@@ -157,7 +76,7 @@ function AppContent() {
           <Route path="/about" element={<AboutPage />} />
           <Route path="/news" element={<NewsPage />} />
           <Route path="/contact" element={<ContactPage />} />
-          <Route path="/login" element={<LoginPage onLogin={handleLogin} />} />
+          {/* <Route path="/login" element={<LoginPage onLogin={handleLogin} />} /> */}
           <Route
             path="/blog/willow" 
             element={<BlogPage 
@@ -176,10 +95,22 @@ function AppContent() {
               auth={auth}
             />} 
           />
-          <Route path="/create-post/willow" element={<ProtectedRoute><CreatePostPage blogType="willow" onAddPost={handleAddPost} auth={auth} /></ProtectedRoute>} />
-          <Route path="/create-post/wishes" element={<ProtectedRoute><CreatePostPage blogType="wishes" onAddPost={handleAddPost} auth={auth} /></ProtectedRoute>} />
-          <Route path="/post/:postId" element={<PostDetailPage posts={posts} onDelete={handleDeletePost} auth={auth} />} />
-          <Route path="/edit-post/:postId" element={<ProtectedRoute><EditPostPage posts={posts} onUpdatePost={handleUpdatePost} auth={auth} /></ProtectedRoute>} />
+          <Route 
+            path="/create-post/willow"
+            element={<CreatePostPage blogType="willow" onAddPost={handleAddPost} />}
+          />
+          <Route 
+            path="/create-post/wishes"
+            element={<CreatePostPage blogType="wishes" onAddPost={handleAddPost} />}
+          />
+          <Route 
+            path="/post/:postId"
+            element={<PostDetailPage posts={posts} onDelete={handleDeletePost} />}
+          />
+          <Route 
+            path="/edit-post/:postId"
+            element={<EditPostPage posts={posts} onUpdatePost={handleUpdatePost} />}
+          />
           {/* Catch-all route for 404 Not Found pages */}
           <Route path="*" element={<NotFoundPage />} />
         </Routes>
