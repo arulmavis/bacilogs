@@ -1,6 +1,10 @@
 // src/App.js
-import React, { useState, useEffect, useCallback } from 'react';
-import { BrowserRouter as Router, Routes, Route, useLocation, useNavigate, Navigate } from 'react-router-dom';
+import React, { useState, useEffect, useMemo } from 'react';
+import { BrowserRouter as Router, Routes, Route, useLocation, Navigate } from 'react-router-dom';
+import { collection, getDocs } from 'firebase/firestore';
+import { db } from './firebase';
+import { useAuth } from './context/AuthContext';
+
 import Navbar from './Components/Navbar';
 import HomePage from './Pages/HomePage';
 import BlogPage from './Pages/BlogPage'; // Import the new BlogPage
@@ -8,6 +12,8 @@ import CreatePostPage from './Pages/CreatePostPage'; // Import the new CreatePos
 import PostDetailPage from './Pages/PostDetailPage'; // Import for viewing a single post
 import EditPostPage from './Pages/EditPostPage'; // Import for editing a post
 import LoginPage from './Pages/LoginPage';
+import SignupPage from './Pages/SignupPage';
+import DashboardPage from './Pages/DashboardPage';
 import NotFoundPage from './Pages/NotFoundPage'; // Import for 404 Not Found pages
 import Footer from './Components/Footer';
 import './App.css';
@@ -19,102 +25,37 @@ const ContactPage = () => <div className="page-container"><h1>Contact</h1></div>
 
 function AppContent() {
   const location = useLocation();
-  const navigate = useNavigate();
   const [theme, setTheme] = useState('light');
   const [posts, setPosts] = useState([]);
-  const [auth, setAuth] = useState(null); // Holds login state { user, token }
+  const { currentUser, loading } = useAuth(); // Assuming useAuth provides a loading state
 
-  // On initial load, check local storage for a saved login session
+  // Fetch posts from Firestore when the component first loads
   useEffect(() => {
-    const storedAuth = localStorage.getItem('bacilogs_auth');
-    if (storedAuth) {
-      setAuth(JSON.parse(storedAuth));
-    }
-  }, []);
-
-  const handleLogin = (authData) => {
-    localStorage.setItem('bacilogs_auth', JSON.stringify(authData));
-    setAuth(authData);
-  };
-
-  const handleLogout = () => {
-    localStorage.removeItem('bacilogs_auth');
-    setAuth(null);
-    navigate('/');
-  };
-
-  const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:5000';
-
-  // Fetch posts from the backend API when the component first loads
-  const fetchPosts = useCallback(() => {
-    fetch(`${apiUrl}/api/posts`)
-      .then(res => res.json())
-      .then(data => setPosts(data))
-      .catch(err => console.error("Failed to fetch posts:", err));
-  }, [apiUrl]);
-
-  useEffect(() => {
-    fetchPosts();
-  }, [fetchPosts]);
-
-  const handleAddPost = async (post) => {
-    if (!auth) return alert('You must be logged in to create a post.');
-    try {
-      const response = await fetch(`${apiUrl}/api/posts`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${auth.token}`,
-        },
-        body: JSON.stringify(post),
-      });
-      if (!response.ok) throw new Error('Failed to create post');
-      fetchPosts(); // Re-fetch all posts to get the latest list
-      navigate(`/blog/${post.blogType}`);
-    } catch (error) {
-      console.error('Error adding post:', error);
-    }
-  };
-
-  const handleUpdatePost = async (updatedPost) => {
-    if (!auth) return alert('You must be logged in to update a post.');
-    try {
-      const response = await fetch(`${apiUrl}/api/posts/${updatedPost._id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${auth.token}`,
-        },
-        body: JSON.stringify(updatedPost),
-      });
-      if (!response.ok) throw new Error('Failed to update post');
-      fetchPosts(); // Re-fetch all posts
-      navigate(`/post/${updatedPost._id}`);
-    } catch (error) {
-      console.error('Error updating post:', error);
-    }
-  };
-
-  const handleDeletePost = async (postId, blogType) => {
-    if (!auth) return alert('You must be logged in to delete a post.');
-    if (window.confirm('Are you sure you want to delete this post?')) {
+    const fetchPosts = async () => {
       try {
-        const response = await fetch(`${apiUrl}/api/posts/${postId}`, {
-          method: 'DELETE',
-          headers: { 'Authorization': `Bearer ${auth.token}` },
-        });
-        if (!response.ok) throw new Error('Failed to delete post');
-        fetchPosts(); // Re-fetch all posts
-        navigate(`/blog/${blogType}`);
-      } catch (error) {
-        console.error('Error deleting post:', error);
+        const postsCollection = collection(db, 'posts'); // "posts" is your collection name
+        const postSnapshot = await getDocs(postsCollection);
+        const postList = postSnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
+        setPosts(postList);
+      } catch (err) {
+        console.error("Failed to fetch posts:", err);
       }
-    }
-  };
+    };
+
+    fetchPosts();
+  }, []); // The empty dependency array ensures this runs once on mount
 
   // A component to protect routes that require login
   const ProtectedRoute = ({ children }) => {
-    if (!auth) {
+    // While auth state is loading, don't render anything to avoid flicker
+    if (loading) {
+      return null; // Or a loading spinner
+    }
+
+    if (!currentUser) {
+      // Redirect them to the /login page, but save the current location they were
+      // trying to go to when they were redirected. This allows us to send them
+      // along to that page after they login, which is a nicer user experience.
       return <Navigate to="/login" state={{ from: location }} replace />;
     }
     return children;
@@ -123,10 +64,10 @@ function AppContent() {
   useEffect(() => {
     // Apply theme based on the current page path
     const pathParts = location.pathname.split('/');
-    const postId = pathParts[2];
-    if (location.pathname.includes('/blog/willow') || (pathParts[1] === 'post' && posts.find(p => p._id === postId)?.blogType === 'willow')) {
+    const postId = pathParts[2]; // Note: Firestore uses `id`, not `_id`
+    if (location.pathname.includes('/blog/willow') || (pathParts[1] === 'post' && posts.find(p => p.id === postId)?.blogType === 'willow')) {
       document.body.setAttribute('data-theme', 'willow');
-    } else if (location.pathname.includes('/blog/wishes') || (pathParts[1] === 'post' && posts.find(p => p._id === postId)?.blogType === 'wishes')) {
+    } else if (location.pathname.includes('/blog/wishes') || (pathParts[1] === 'post' && posts.find(p => p.id === postId)?.blogType === 'wishes')) {
       document.body.setAttribute('data-theme', 'wishes');
     } else {
       // For all other pages, use the light/dark theme state
@@ -134,10 +75,13 @@ function AppContent() {
     }
   }, [theme, location.pathname, posts]);
 
+  // Filter posts for each blog type
+  const willowPosts = useMemo(() => posts.filter(p => p.blogType === 'willow'), [posts]);
+  const wishesPosts = useMemo(() => posts.filter(p => p.blogType === 'wishes'), [posts]);
+
   return (
     <div className="App">
-      {/* Pass theme state and setter to Navbar for the toggle switch */}
-      <Navbar theme={theme} setTheme={setTheme} auth={auth} onLogout={handleLogout} />
+      <Navbar theme={theme} setTheme={setTheme} />
       <main>
         <Routes>
           {/* Pass posts to HomePage to display count */}
@@ -145,14 +89,14 @@ function AppContent() {
             <Route path="/about" element={<AboutPage />} />
             <Route path="/news" element={<NewsPage />} />
             <Route path="/contact" element={<ContactPage />} />
-            <Route path="/login" element={<LoginPage onLogin={handleLogin} />} />
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/signup" element={<SignupPage />} />
             <Route 
               path="/blog/willow" 
               element={<BlogPage 
                 blogName="Memorial of a Willow Tree" 
                 blogType="willow"
-                posts={posts.filter(p => p.blogType === 'willow')} 
-                auth={auth}
+                posts={willowPosts} 
               />} 
             />
             <Route 
@@ -160,29 +104,32 @@ function AppContent() {
               element={<BlogPage 
                 blogName="Eyes Hiding Secret Wishes" 
                 blogType="wishes"
-                posts={posts.filter(p => p.blogType === 'wishes')} 
-                auth={auth}
+                posts={wishesPosts} 
               />}
+            />
+            {/* Protected Routes */}
+            <Route 
+              path="/dashboard"
+              element={<ProtectedRoute><DashboardPage /></ProtectedRoute>}
             />
             <Route 
               path="/create-post/willow"
-              element={<ProtectedRoute><CreatePostPage blogType="willow" onAddPost={handleAddPost} /></ProtectedRoute>}
+              element={<ProtectedRoute><CreatePostPage blogType="willow" /></ProtectedRoute>}
             />
             <Route 
               path="/create-post/wishes"
-              element={<ProtectedRoute><CreatePostPage blogType="wishes" onAddPost={handleAddPost} /></ProtectedRoute>}
+              element={<ProtectedRoute><CreatePostPage blogType="wishes" /></ProtectedRoute>}
             />
             <Route 
               path="/post/:postId"
-              element={<PostDetailPage posts={posts} onDelete={handleDeletePost} auth={auth} />}
+              element={<PostDetailPage posts={posts} />}
             />
             <Route 
               path="/edit-post/:postId"
               element={
                 <ProtectedRoute>
                   <EditPostPage 
-                    posts={posts} 
-                    onUpdatePost={handleUpdatePost} 
+                    posts={posts}
                   />
                 </ProtectedRoute>
               }
