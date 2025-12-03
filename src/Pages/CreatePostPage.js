@@ -47,18 +47,19 @@ const CreatePostPage = ({ blogType }) => {
         }
       }
     };
-  }, [currentUser]);
+  }, [currentUser, quillRef]);
 
   // Configure the Quill editor modules and formats for a rich text experience
   const modules = useMemo(() => ({
     toolbar: {
       container: [
-        [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
+        [{ 'header': [1, 2, 3, 4, false] }, { 'size': ['small', false, 'large', 'huge'] }],
         [{ 'font': [] }],
-        ['bold', 'italic', 'underline', 'strike'],
+        ['bold', 'italic', 'underline', 'strike', 'blockquote', 'code-block'],
         [{ 'color': [] }, { 'background': [] }],
-        [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+        [{ 'list': 'ordered'}, { 'list': 'bullet' }, { 'indent': '-1'}, { 'indent': '+1' }],
         [{ 'align': [] }],
+        ['script', 'super', 'sub'],
         ['link', 'image', 'video'],
         ['clean']
       ],

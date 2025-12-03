@@ -57,13 +57,17 @@ const EditPostPage = () => {
         quill.insertEmbed(range.index, 'image', downloadURL);
       }
     };
-  }, [currentUser, quillRef]);
+  }, [currentUser]);
 
   const modules = useMemo(() => ({
     toolbar: {
       container: [
-        [{ 'header': [1, 2, 3, 4, 5, 6, false] }], ['bold', 'italic', 'underline'],
-        [{ 'list': 'ordered'}, { 'list': 'bullet' }], ['link', 'image', 'video'], ['clean']
+        [{ 'header': [1, 2, 3, 4, false] }, { 'size': ['small', false, 'large', 'huge'] }],
+        [{ 'font': [] }],
+        ['bold', 'italic', 'underline', 'strike', 'blockquote', 'code-block'],
+        [{ 'color': [] }, { 'background': [] }],
+        [{ 'list': 'ordered'}, { 'list': 'bullet' }, { 'indent': '-1'}, { 'indent': '+1' }],
+        [{ 'align': [] }], ['script', 'super', 'sub'], ['link', 'image', 'video'], ['clean']
       ],
       handlers: { image: imageHandler },
     },
