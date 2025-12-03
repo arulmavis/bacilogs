@@ -56,7 +56,7 @@ function AppContent() {
   const ProtectedRoute = ({ children }) => {
     // While auth state is loading, don't render anything to avoid flicker
     if (loading) {
-      return null; // Or a loading spinner
+      return <div className="page-container"><h1>Loading...</h1></div>; // Display a loading indicator
     }
 
     if (!currentUser) {
