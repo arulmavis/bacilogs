@@ -11,6 +11,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Debug Secrets
+        run: |
+          echo "API_KEY_IS_SET: ${{ secrets.REACT_APP_FIREBASE_API_KEY != '' }}"
+          echo "API_KEY_PREFIX: ${{ secrets.REACT_APP_FIREBASE_API_KEY && 'AIzaSy...' || 'NOT-SET' }}"
       - run: npm ci && npm run build
         env:
           REACT_APP_FIREBASE_API_KEY: ${{ secrets.REACT_APP_FIREBASE_API_KEY }}
