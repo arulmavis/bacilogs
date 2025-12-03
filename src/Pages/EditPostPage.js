@@ -1,5 +1,5 @@
 // src/Pages/EditPostPage.js
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
@@ -40,7 +40,7 @@ const EditPostPage = () => {
     }
   }, [postId, currentUser, navigate]);
 
-  const imageHandler = () => {
+  const imageHandler = useCallback(() => {
     const input = document.createElement('input');
     input.setAttribute('type', 'file');
     input.setAttribute('accept', 'image/*');
@@ -57,7 +57,7 @@ const EditPostPage = () => {
         quill.insertEmbed(range.index, 'image', downloadURL);
       }
     };
-  };
+  }, [currentUser, quillRef]);
 
   const modules = useMemo(() => ({
     toolbar: {
@@ -67,7 +67,7 @@ const EditPostPage = () => {
       ],
       handlers: { image: imageHandler },
     },
-  }), []);
+  }), [imageHandler]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
