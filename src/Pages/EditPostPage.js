@@ -1,59 +1,95 @@
 // src/Pages/EditPostPage.js
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { doc, getDoc, updateDoc } from 'firebase/firestore';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { db, storage } from '../firebase';
+import { useAuth } from '../context/AuthContext';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
-import './CreatePostPage.css'; // We can reuse the same CSS
+import './CreatePostPage.css'; // Reuse the same CSS
 
-const EditPostPage = ({ posts, onUpdatePost }) => {
+const EditPostPage = () => {
   const { postId } = useParams();
   const navigate = useNavigate();
-  const postToEdit = posts.find(p => p._id === postId);
-
+  const { currentUser } = useAuth();
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
-  const [titlePicture, setTitlePicture] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
+  const [isUpdating, setIsUpdating] = useState(false);
+  const quillRef = useRef(null);
 
   useEffect(() => {
-    if (postToEdit) {
-      setTitle(postToEdit.title);
-      setContent(postToEdit.content);
-      setTitlePicture(postToEdit.titlePicture);
-    } else {
-      // If post not found, maybe redirect
-      navigate('/');
-    }
-  }, [postToEdit, navigate]);
-
-  const handleImageUpload = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setTitlePicture(URL.createObjectURL(file));
-    }
-  };
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    const updatedPost = {
-      ...postToEdit,
-      title,
-      content,
-      titlePicture,
+    const fetchPost = async () => {
+      const postRef = doc(db, 'posts', postId);
+      const postSnap = await getDoc(postRef);
+      if (postSnap.exists()) {
+        const postData = postSnap.data();
+        // Security check: only allow the author to edit
+        if (currentUser && postData.authorId === currentUser.uid) {
+          setTitle(postData.title);
+          setContent(postData.content);
+        } else {
+          navigate('/'); // Redirect if not the author
+        }
+      }
+      setIsLoading(false);
     };
-    onUpdatePost(updatedPost);
+    if (currentUser) {
+      fetchPost();
+    }
+  }, [postId, currentUser, navigate]);
+
+  const imageHandler = () => {
+    const input = document.createElement('input');
+    input.setAttribute('type', 'file');
+    input.setAttribute('accept', 'image/*');
+    input.click();
+
+    input.onchange = async () => {
+      const file = input.files[0];
+      if (file && currentUser) {
+        const storageRef = ref(storage, `images/${currentUser.uid}/${Date.now()}_${file.name}`);
+        const snapshot = await uploadBytes(storageRef, file);
+        const downloadURL = await getDownloadURL(snapshot.ref);
+        const quill = quillRef.current.getEditor();
+        const range = quill.getSelection(true);
+        quill.insertEmbed(range.index, 'image', downloadURL);
+      }
+    };
   };
 
-  const modules = {
-    toolbar: [
-      [{ 'header': [1, 2, 3, false] }, { 'font': [] }],
-      ['bold', 'italic', 'underline', 'strike', 'blockquote'],
-      [{'list': 'ordered'}, {'list': 'bullet'}, {'indent': '-1'}, {'indent': '+1'}],
-      ['link', 'image', 'video'],
-      ['clean']
-    ],
+  const modules = useMemo(() => ({
+    toolbar: {
+      container: [
+        [{ 'header': [1, 2, 3, 4, 5, 6, false] }], ['bold', 'italic', 'underline'],
+        [{ 'list': 'ordered'}, { 'list': 'bullet' }], ['link', 'image', 'video'], ['clean']
+      ],
+      handlers: { image: imageHandler },
+    },
+  }), []);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setIsUpdating(true);
+    const postRef = doc(db, 'posts', postId);
+    try {
+      await updateDoc(postRef, {
+        title,
+        content,
+      });
+      navigate(`/post/${postId}`); // Navigate back to the post detail page
+    } catch (error) {
+      console.error("Error updating document: ", error);
+      alert('Failed to update post.');
+    } finally {
+      setIsUpdating(false);
+    }
   };
 
-  if (!postToEdit) return null; // Or a loading indicator
+  if (isLoading) {
+    return <div className="page-container"><h1>Loading editor...</h1></div>;
+  }
 
   return (
     <div className="page-container create-post-page">
@@ -61,23 +97,21 @@ const EditPostPage = ({ posts, onUpdatePost }) => {
       <form onSubmit={handleSubmit} className="post-form">
         <div className="form-group">
           <label htmlFor="title">Blog Title</label>
-          <input type="text" id="title" value={title} onChange={(e) => setTitle(e.target.value)} />
-        </div>
-        <div className="form-group">
-          <label htmlFor="title-picture">Title Picture</label>
-          <input type="file" id="title-picture" accept="image/png, image/jpeg" onChange={handleImageUpload} />
-          {titlePicture && <img src={titlePicture} alt="Preview" className="image-preview" />}
+          <input type="text" id="title" value={title} onChange={(e) => setTitle(e.target.value)} required />
         </div>
         <div className="form-group">
           <label>Blog Content</label>
           <ReactQuill 
+            ref={quillRef}
             theme="snow" 
             value={content} 
             onChange={setContent}
             modules={modules}
           />
         </div>
-        <button type="submit" className="submit-post-button">Update Post</button>
+        <button type="submit" className="publish-button" disabled={isUpdating}>
+          {isUpdating ? 'Updating...' : 'Update Post'}
+        </button>
       </form>
     </div>
   );

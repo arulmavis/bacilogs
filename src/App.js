@@ -138,14 +138,12 @@ function AppContent() {
             />
             <Route 
               path="/post/:postId"
-              element={<PostDetailPage />}
+              element={<PostDetailPage />} // No props needed
             />
             <Route 
               path="/edit-post/:postId"
               element={
-                <ProtectedRoute>
-                  <EditPostPage />
-                </ProtectedRoute>
+                <ProtectedRoute><EditPostPage /></ProtectedRoute> // No props needed
               }
             />
             {/* Catch-all route for 404 Not Found pages */}
