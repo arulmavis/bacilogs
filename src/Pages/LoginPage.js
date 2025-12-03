@@ -14,7 +14,7 @@ const LoginPage = () => {
   const location = useLocation();
 
   // Get the path the user was trying to access before being redirected to login
-  const from = location.state?.from?.pathname || '/dashboard';
+  const from = location.state?.from?.pathname || '/';
 
   const handleLogin = async (e) => {
     e.preventDefault();

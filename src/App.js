@@ -130,10 +130,6 @@ function AppContent() {
             />
             {/* Protected Routes */}
             <Route 
-              path="/dashboard"
-              element={<ProtectedRoute><DashboardPage /></ProtectedRoute>}
-            />
-            <Route 
               path="/create-post/willow"
               element={<ProtectedRoute><CreatePostPage blogType="willow" /></ProtectedRoute>}
             />

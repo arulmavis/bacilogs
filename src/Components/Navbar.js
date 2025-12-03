@@ -4,6 +4,12 @@ import { NavLink, Link } from 'react-router-dom';
 import ThemeToggle from './ThemeToggle';
 import './navbar.css';
 
+// A simple map to associate emails with author names
+const authorNameMap = {
+  'ardaulker24@gmail.com': 'Arül',
+  'gizemy213@gmail.com': 'Gizemeh',
+};
+
 const Navbar = ({ theme, setTheme, currentUser, onLogout }) => {
   return (
     <nav className="navbar">
@@ -16,10 +22,12 @@ const Navbar = ({ theme, setTheme, currentUser, onLogout }) => {
         <NavLink to="/contact">Contact</NavLink>
       </div>
       <div className="navbar-right">
-        {currentUser ? (
+        {currentUser ? ( // If a user is logged in...
           <>
-            <NavLink to="/dashboard" className="navbar-button">Dashboard</NavLink>
-            <span className="navbar-username">Welcome, {currentUser.displayName || currentUser.email}!</span>
+            {/* Look up the custom name, or fall back to Firebase's displayName or email */}
+            <span className="navbar-username">
+              Welcome, {authorNameMap[currentUser.email] || currentUser.displayName || currentUser.email}!
+            </span>
             <button onClick={onLogout} className="navbar-button logout-button">Logout</button>
           </>
         ) : (
