@@ -18,6 +18,7 @@ const Navbar = ({ theme, setTheme, currentUser, onLogout }) => {
       <div className="navbar-right">
         {currentUser ? (
           <>
+            <NavLink to="/dashboard" className="navbar-button">Dashboard</NavLink>
             <span className="navbar-username">Welcome, {currentUser.displayName || currentUser.email}!</span>
             <button onClick={onLogout} className="navbar-button logout-button">Logout</button>
           </>
