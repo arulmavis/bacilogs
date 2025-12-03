@@ -1,6 +1,6 @@
 // src/App.js
 import React, { useState, useEffect, useMemo } from 'react';
-import { BrowserRouter as Router, Routes, Route, useLocation, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, useLocation, Navigate, useNavigate } from 'react-router-dom';
 import { collection, onSnapshot } from 'firebase/firestore';
 import { db } from './firebase';
 import { useAuth } from './context/AuthContext';
@@ -18,14 +18,16 @@ import Footer from './Components/Footer';
 import './App.css';
 
 // Placeholder components for other pages
-const AboutPage = () => <div className="page-container"><h1>About Us test</h1></div>;
+const AboutPage = () => <div className="page-container"><h1>About Us test 3rd of december</h1></div>;
 const NewsPage = () => <div className="page-container"><h1>News</h1></div>;
 const ContactPage = () => <div className="page-container"><h1>Contact</h1></div>;
 
 function AppContent() {
   const location = useLocation();
+  const navigate = useNavigate();
   const [theme, setTheme] = useState('light');
   const [posts, setPosts] = useState([]);
+  const [postsLoading, setPostsLoading] = useState(true); // Add a loading state for posts
   const { currentUser, loading } = useAuth(); // Assuming useAuth provides a loading state
 
   // Create a lookup map for post blog types for efficient access
@@ -43,6 +45,7 @@ function AppContent() {
     const unsubscribe = onSnapshot(postsCollection, (querySnapshot) => {
       const postList = querySnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
       setPosts(postList);
+      setPostsLoading(false); // Set loading to false once posts are fetched
     }, (err) => {
       console.error("Failed to listen for post updates:", err);
     });
@@ -54,7 +57,7 @@ function AppContent() {
 
   // A component to protect routes that require login
   const ProtectedRoute = ({ children }) => {
-    // While auth state is loading, don't render anything to avoid flicker
+    // While auth state is loading, show a loading indicator to prevent flicker or premature redirects.
     if (loading) {
       return <div className="page-container"><h1>Loading...</h1></div>; // Display a loading indicator
     }
@@ -66,6 +69,15 @@ function AppContent() {
       return <Navigate to="/login" state={{ from: location }} replace />;
     }
     return children;
+  };
+
+  const handleLogout = async () => {
+    try {
+      await auth.signOut();
+      navigate('/login'); // Redirect to login page after logout
+    } catch (error) {
+      console.error('Failed to log out', error);
+    }
   };
 
   useEffect(() => {
@@ -89,7 +101,7 @@ function AppContent() {
 
   return (
     <div className="App">
-      <Navbar theme={theme} setTheme={setTheme} />
+      <Navbar theme={theme} setTheme={setTheme} currentUser={currentUser} onLogout={handleLogout} />
       <main>
         <Routes>
           {/* Pass posts to HomePage to display count */}
@@ -101,9 +113,10 @@ function AppContent() {
             <Route 
               path="/blog/willow" 
               element={<BlogPage 
-                blogName="Memorial of a Willow Tree" 
+                blogName="Memorial of a Willow Tree"
                 blogType="willow"
-                posts={willowPosts} 
+                posts={willowPosts}
+                isLoading={postsLoading}
               />} 
             />
             <Route 
@@ -111,7 +124,8 @@ function AppContent() {
               element={<BlogPage 
                 blogName="Eyes Hiding Secret Wishes" 
                 blogType="wishes"
-                posts={wishesPosts} 
+                posts={wishesPosts}
+                isLoading={postsLoading}
               />}
             />
             {/* Protected Routes */}
@@ -129,15 +143,13 @@ function AppContent() {
             />
             <Route 
               path="/post/:postId"
-              element={<PostDetailPage posts={posts} />}
+              element={<PostDetailPage />}
             />
             <Route 
               path="/edit-post/:postId"
               element={
                 <ProtectedRoute>
-                  <EditPostPage 
-                    posts={posts}
-                  />
+                  <EditPostPage />
                 </ProtectedRoute>
               }
             />
