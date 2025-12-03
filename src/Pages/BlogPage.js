@@ -3,12 +3,12 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import './BlogPage.css';
 
-const BlogPage = ({ blogName, blogType, posts, auth }) => {
+const BlogPage = ({ blogName, blogType, posts, currentUser }) => {
   return (
     <div className="page-container blog-page">
       <div className="blog-header">
         <h1>{blogName}</h1>
-        {auth && (
+        {currentUser && (
           <Link to={`/create-post/${blogType}`} className="write-blog-button">
             Write a Blog
           </Link>

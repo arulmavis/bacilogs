@@ -116,6 +116,7 @@ function AppContent() {
                 blogType="willow"
                 posts={willowPosts}
                 isLoading={postsLoading}
+                currentUser={currentUser}
               />} 
             />
             <Route 
@@ -125,6 +126,7 @@ function AppContent() {
                 blogType="wishes"
                 posts={wishesPosts}
                 isLoading={postsLoading}
+                currentUser={currentUser}
               />}
             />
             {/* Protected Routes */}
