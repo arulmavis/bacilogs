@@ -18,7 +18,7 @@ import Footer from './Components/Footer';
 import './App.css';
 
 // Placeholder components for other pages
-const AboutPage = () => <div className="page-container"><h1>About Us test 3rd of december</h1></div>;
+const AboutPage = () => <div className="page-container"><h1>About Us</h1></div>;
 const NewsPage = () => <div className="page-container"><h1>News</h1></div>;
 const ContactPage = () => <div className="page-container"><h1>Contact</h1></div>;
 
