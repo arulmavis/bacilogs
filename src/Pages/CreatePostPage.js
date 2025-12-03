@@ -1,77 +1,122 @@
 // src/Pages/CreatePostPage.js
-import React, { useState } from 'react';
+import React, { useState, useMemo, useRef, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { db, storage } from '../firebase';
+import { useAuth } from '../context/AuthContext';
 import ReactQuill from 'react-quill';
-import 'react-quill/dist/quill.snow.css'; // import styles
+import 'react-quill/dist/quill.snow.css'; // Import Quill styles
 import './CreatePostPage.css';
 
-const CreatePostPage = ({ blogType, onAddPost }) => {
+const CreatePostPage = ({ blogType }) => {
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
-  const [titlePicture, setTitlePicture] = useState('');
+  const [isPublishing, setIsPublishing] = useState(false);
+  const { currentUser } = useAuth();
+  const navigate = useNavigate();
+  const quillRef = useRef(null);
 
-  const handleImageUpload = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      // In a real app, you'd upload this to a server.
-      // For now, we'll use a local URL.
-      setTitlePicture(URL.createObjectURL(file));
-    }
-  };
+  // Custom image handler for the Quill editor
+  const imageHandler = useCallback(() => {
+    const input = document.createElement('input');
+    input.setAttribute('type', 'file');
+    input.setAttribute('accept', 'image/*');
+    input.click();
 
-  const handleSubmit = (e) => {
+    input.onchange = async () => {
+      const file = input.files[0];
+      if (file && currentUser) {
+        try {
+          // Create a storage reference
+          const storageRef = ref(storage, `images/${currentUser.uid}/${Date.now()}_${file.name}`);
+          
+          // Upload the file
+          const snapshot = await uploadBytes(storageRef, file);
+          
+          // Get the download URL
+          const downloadURL = await getDownloadURL(snapshot.ref);
+          
+          // Insert the image into the editor
+          const quill = quillRef.current.getEditor();
+          const range = quill.getSelection(true);
+          quill.insertEmbed(range.index, 'image', downloadURL);
+        } catch (error) {
+          console.error("Error uploading image: ", error);
+          alert('Image upload failed. Please try again.');
+        }
+      }
+    };
+  }, [currentUser]);
+
+  // Configure the Quill editor modules and formats for a rich text experience
+  const modules = useMemo(() => ({
+    toolbar: {
+      container: [
+        [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
+        [{ 'font': [] }],
+        ['bold', 'italic', 'underline', 'strike'],
+        [{ 'color': [] }, { 'background': [] }],
+        [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+        [{ 'align': [] }],
+        ['link', 'image', 'video'],
+        ['clean']
+      ],
+      handlers: {
+        image: imageHandler,
+      },
+    },
+  }), [imageHandler]);
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!title || !content) {
-      alert('Please fill out both the title and the blog content.');
+    if (!title.trim() || !content.trim()) {
+      alert('Please provide a title and content for your post.');
       return;
     }
-    onAddPost({ title, content, titlePicture, blogType });
-  };
+    setIsPublishing(true);
 
-  // Configuration for the editor's toolbar
-  const modules = {
-    toolbar: [
-      [{ 'header': [1, 2, 3, false] }, { 'font': [] }],
-      ['bold', 'italic', 'underline', 'strike', 'blockquote'],
-      [{'list': 'ordered'}, {'list': 'bullet'}, {'indent': '-1'}, {'indent': '+1'}],
-      ['link', 'image', 'video'], // image and video are supported!
-      ['clean']
-    ],
+    try {
+      await addDoc(collection(db, 'posts'), {
+        title,
+        content,
+        blogType,
+        authorId: currentUser.uid,
+        authorName: currentUser.displayName || currentUser.email,
+        createdAt: serverTimestamp(),
+      });
+      // Navigate to the corresponding blog page after successful publish
+      navigate(`/blog/${blogType}`);
+    } catch (error) {
+      console.error('Error adding document: ', error);
+      alert('Failed to publish post. Please try again.');
+    } finally {
+      setIsPublishing(false);
+    }
   };
 
   return (
     <div className="page-container create-post-page">
-      <h1>Create New Post for {blogType === 'willow' ? '"Memorial of a Willow Tree"' : '"Eyes Hiding Secret Wishes"'}</h1>
+      <h1>Create a New Post for "{blogType}"</h1>
       <form onSubmit={handleSubmit} className="post-form">
         <div className="form-group">
           <label htmlFor="title">Blog Title</label>
-          <input 
-            type="text" 
-            id="title" 
-            value={title} 
-            onChange={(e) => setTitle(e.target.value)}
-            placeholder="Your awesome title"
-          />
-        </div>
-        <div className="form-group">
-          <label htmlFor="title-picture">Title Picture</label>
-          <input 
-            type="file" 
-            id="title-picture"
-            accept="image/png, image/jpeg"
-            onChange={handleImageUpload}
-          />
-          {titlePicture && <img src={titlePicture} alt="Preview" className="image-preview" />}
+          <input type="text" id="title" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Your post title" required />
         </div>
         <div className="form-group">
           <label>Blog Content</label>
           <ReactQuill 
+            ref={quillRef}
             theme="snow" 
             value={content} 
             onChange={setContent}
             modules={modules}
+            placeholder="Write your story here..."
           />
         </div>
-        <button type="submit" className="submit-post-button">Publish Post</button>
+        <button type="submit" className="publish-button" disabled={isPublishing}>
+          {isPublishing ? 'Publishing...' : 'Publish'}
+        </button>
       </form>
     </div>
   );

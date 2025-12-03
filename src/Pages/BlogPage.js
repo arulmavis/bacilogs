@@ -18,14 +18,12 @@ const BlogPage = ({ blogName, blogType, posts, currentUser }) => {
       <div className="post-list">
         {posts.length > 0 ? (
           posts.map(post => (
-            <div key={post._id} className="post-summary">
-              {post.titlePicture && <img src={post.titlePicture} alt={post.title} className="post-summary-image" />}
+            <div key={post.id} className="post-summary">
               <div className="post-summary-content">
                 <h2>{post.title}</h2>
                 {/* The content from the editor is HTML, so we use dangerouslySetInnerHTML */}
-                {/* We'll show a snippet here in a real app, but for now, we show it all */}
                 <div dangerouslySetInnerHTML={{ __html: post.content.substring(0, 200) + '...' }} />
-                <Link to={`/post/${post._id}`} className="read-more">Read More</Link>
+                <Link to={`/post/${post.id}`} className="read-more">Read More</Link>
               </div>
             </div>
           ))
