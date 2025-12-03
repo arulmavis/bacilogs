@@ -1,7 +1,7 @@
 // src/App.js
 import React, { useState, useEffect, useMemo } from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation, Navigate } from 'react-router-dom';
-import { collection, getDocs } from 'firebase/firestore';
+import { collection, onSnapshot } from 'firebase/firestore';
 import { db } from './firebase';
 import { useAuth } from './context/AuthContext';
 
@@ -28,21 +28,29 @@ function AppContent() {
   const [posts, setPosts] = useState([]);
   const { currentUser, loading } = useAuth(); // Assuming useAuth provides a loading state
 
-  // Fetch posts from Firestore when the component first loads
-  useEffect(() => {
-    const fetchPosts = async () => {
-      try {
-        const postsCollection = collection(db, 'posts'); // "posts" is your collection name
-        const postSnapshot = await getDocs(postsCollection);
-        const postList = postSnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
-        setPosts(postList);
-      } catch (err) {
-        console.error("Failed to fetch posts:", err);
-      }
-    };
+  // Create a lookup map for post blog types for efficient access
+  const postBlogTypeMap = useMemo(() => {
+    const map = new Map();
+    posts.forEach(post => map.set(post.id, post.blogType));
+    return map;
+  }, [posts]);
 
-    fetchPosts();
-  }, []); // The empty dependency array ensures this runs once on mount
+  // Listen for real-time updates from Firestore
+  useEffect(() => {
+    const postsCollection = collection(db, 'posts');
+    
+    // onSnapshot returns an unsubscribe function
+    const unsubscribe = onSnapshot(postsCollection, (querySnapshot) => {
+      const postList = querySnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
+      setPosts(postList);
+    }, (err) => {
+      console.error("Failed to listen for post updates:", err);
+    });
+
+    // Cleanup: unsubscribe when the component unmounts
+    return () => unsubscribe();
+    
+  }, []); // Empty dependency array ensures this sets up the listener once
 
   // A component to protect routes that require login
   const ProtectedRoute = ({ children }) => {
@@ -63,16 +71,17 @@ function AppContent() {
   useEffect(() => {
     // Apply theme based on the current page path
     const pathParts = location.pathname.split('/');
-    const postId = pathParts[2]; // Note: Firestore uses `id`, not `_id`
-    if (location.pathname.includes('/blog/willow') || (pathParts[1] === 'post' && posts.find(p => p.id === postId)?.blogType === 'willow')) {
+    const pageType = pathParts[1];
+    const entityId = pathParts[2];
+
+    if (location.pathname.includes('/blog/willow') || (pageType === 'post' && postBlogTypeMap.get(entityId) === 'willow')) {
       document.body.setAttribute('data-theme', 'willow');
-    } else if (location.pathname.includes('/blog/wishes') || (pathParts[1] === 'post' && posts.find(p => p.id === postId)?.blogType === 'wishes')) {
+    } else if (location.pathname.includes('/blog/wishes') || (pageType === 'post' && postBlogTypeMap.get(entityId) === 'wishes')) {
       document.body.setAttribute('data-theme', 'wishes');
     } else {
-      // For all other pages, use the light/dark theme state
       document.body.setAttribute('data-theme', theme);
     }
-  }, [theme, location.pathname, posts]);
+  }, [theme, location.pathname, postBlogTypeMap]);
 
   // Filter posts for each blog type
   const willowPosts = useMemo(() => posts.filter(p => p.blogType === 'willow'), [posts]);
