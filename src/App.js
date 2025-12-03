@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation, Navigate, useNavigate } from 'react-router-dom';
 import { collection, onSnapshot } from 'firebase/firestore';
-import { db } from './firebase';
+import { db, auth } from './firebase';
 import { useAuth } from './context/AuthContext';
 
 import Navbar from './Components/Navbar';
