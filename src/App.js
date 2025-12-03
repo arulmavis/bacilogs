@@ -12,7 +12,6 @@ import CreatePostPage from './Pages/CreatePostPage'; // Import the new CreatePos
 import PostDetailPage from './Pages/PostDetailPage'; // Import for viewing a single post
 import EditPostPage from './Pages/EditPostPage'; // Import for editing a post
 import LoginPage from './Pages/LoginPage'; 
-import DashboardPage from './Pages/DashboardPage';
 import NotFoundPage from './Pages/NotFoundPage'; // Import for 404 Not Found pages
 import Footer from './Components/Footer';
 import './App.css';
